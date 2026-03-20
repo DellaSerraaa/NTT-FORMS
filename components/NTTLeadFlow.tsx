@@ -1,8 +1,9 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { buildSteps, formatWhatsApp, isStepValid } from '@/components/leadFlowUtils'
 import type { FormData } from '@/components/leadFlowUtils'
 import { insertFormSubmission } from '@/utils/supabase/queries/form-submissions'
@@ -16,6 +17,17 @@ const horarios = [
   'Noite',
   'Prefiro combinar pelo WhatsApp',
 ]
+
+const treinoOptions = [
+  { label: 'Sim, ja treino', value: 'sim' },
+  { label: 'Nao treino hoje', value: 'nao' },
+  { label: 'Treino as vezes', value: 'as_vezes' },
+] as const
+
+const conheceOptions = [
+  { label: 'Sim', value: 'sim' },
+  { label: 'Nao', value: 'nao' },
+] as const
 
 const easeSmooth = [0.22, 1, 0.36, 1] as const
 const easeExit = [0.4, 0, 1, 1] as const
@@ -199,9 +211,6 @@ export default function NTTLeadFlow() {
                   <IntroCard>Agendamento direto com o time</IntroCard>
                 </motion.div>
 
-                <p className="mt-4 rounded-xl border border-amber-200/20 bg-amber-300/10 px-3 py-2 text-xs text-amber-100">
-                  Configure as variaveis do Supabase antes de publicar.
-                </p>
               </div>
 
               <motion.div
@@ -371,11 +380,7 @@ export default function NTTLeadFlow() {
                           description="Isso ajuda a equipe a entender seu momento."
                         >
                           <div className="space-y-3">
-                            {[
-                              { label: 'Sim, ja treino', value: 'sim' },
-                              { label: 'Nao treino hoje', value: 'nao' },
-                              { label: 'Treino as vezes', value: 'as_vezes' },
-                            ].map((option) => (
+                            {treinoOptions.map((option) => (
                               <OptionButton
                                 key={option.value}
                                 label={option.label}
@@ -396,10 +401,7 @@ export default function NTTLeadFlow() {
                           description="Queremos entender se esse e seu primeiro contato com a marca."
                         >
                           <div className="space-y-3">
-                            {[
-                              { label: 'Sim', value: 'sim' },
-                              { label: 'Nao', value: 'nao' },
-                            ].map((option) => (
+                            {conheceOptions.map((option) => (
                               <OptionButton
                                 key={option.value}
                                 label={option.label}
@@ -580,19 +582,70 @@ function NTTLogo({
   small?: boolean
   tiny?: boolean
 }) {
-  const size = tiny ? 28 : small ? 60 : 90
+  const size = tiny ? 34 : small ? 72 : 108
+  const glowSize = Math.round(size * 0.82)
+  const prefersReducedMotion = useReducedMotion()
+  const wrapperAnimation = prefersReducedMotion
+    ? { opacity: 1, scale: 1, y: 0 }
+    : { opacity: 1, scale: 1, y: [0, -2, 0] }
+  const glowAnimation = prefersReducedMotion
+    ? { opacity: tiny ? 0.2 : 0.28, scale: 1 }
+    : {
+        opacity: tiny ? [0.2, 0.32, 0.2] : [0.28, 0.46, 0.28],
+        scale: [0.96, 1.04, 0.96],
+      }
+  const logoAnimation = prefersReducedMotion
+    ? { rotate: 0, scale: 1 }
+    : {
+        rotate: tiny ? 0 : [-0.6, 0.6, -0.6],
+        scale: tiny ? [1, 1.015, 1] : [1, 1.028, 1],
+      }
 
   return (
-    <div
-      className="relative flex items-center justify-center"
+    <motion.div
+      className="relative flex shrink-0 items-center justify-center"
       style={{ width: size, height: size }}
+      initial={{ opacity: 0, scale: 0.96, y: 8 }}
+      animate={wrapperAnimation}
+      transition={{
+        opacity: { duration: 0.45, ease: easeSmooth },
+        scale: { duration: 0.45, ease: easeSmooth },
+        y: {
+          duration: tiny ? 3.8 : 4.8,
+          repeat: prefersReducedMotion ? 0 : Number.POSITIVE_INFINITY,
+          ease: 'easeInOut',
+        },
+      }}
     >
-      <img
-        src="/ntt-studio-logo.svg"
-        alt="NTT Studio"
-        className="h-full w-full object-contain drop-shadow-[0_10px_30px_rgba(255,255,255,0.10)]"
+      <motion.div
+        className="pointer-events-none absolute rounded-full bg-white/14 blur-2xl max-sm:blur-xl"
+        style={{ width: glowSize, height: glowSize }}
+        animate={glowAnimation}
+        transition={{
+          duration: tiny ? 3.2 : 4.4,
+          repeat: prefersReducedMotion ? 0 : Number.POSITIVE_INFINITY,
+          ease: 'easeInOut',
+        }}
       />
-    </div>
+      <motion.div
+        className="relative h-full w-full"
+        animate={logoAnimation}
+        transition={{
+          duration: tiny ? 3.6 : 5.2,
+          repeat: prefersReducedMotion ? 0 : Number.POSITIVE_INFINITY,
+          ease: 'easeInOut',
+        }}
+      >
+        <Image
+          src="/ntt_logo.svg"
+          alt="NTT"
+          fill
+          priority={!small && !tiny}
+          sizes={tiny ? '34px' : small ? '(max-width: 640px) 56px, 72px' : '(max-width: 640px) 84px, 108px'}
+          className="relative object-contain [transform:translateZ(0)] [filter:drop-shadow(0_8px_16px_rgba(255,255,255,0.14))_drop-shadow(0_20px_34px_rgba(4,10,24,0.28))] max-sm:[filter:drop-shadow(0_6px_12px_rgba(255,255,255,0.12))_drop-shadow(0_14px_24px_rgba(4,10,24,0.22))]"
+        />
+      </motion.div>
+    </motion.div>
   )
 }
 

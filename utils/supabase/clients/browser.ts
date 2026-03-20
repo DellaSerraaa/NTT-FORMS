@@ -1,7 +1,14 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { getSupabaseConfig } from '@/utils/supabase/config'
 
+let browserSupabaseClient: ReturnType<typeof createBrowserClient> | null = null
+
 export function createBrowserSupabaseClient() {
+  if (browserSupabaseClient) {
+    return browserSupabaseClient
+  }
+
   const { supabaseUrl, supabaseKey } = getSupabaseConfig()
-  return createBrowserClient(supabaseUrl, supabaseKey)
+  browserSupabaseClient = createBrowserClient(supabaseUrl, supabaseKey)
+  return browserSupabaseClient
 }

@@ -83,8 +83,20 @@ export default function NTTLeadFlow() {
     if (step > 0) setStep((previous) => previous - 1)
   }
 
-  async function handleSubmit() {
-    if (!isCurrentStepValid()) return
+  function goToNextStepDirect() {
+    if (step < steps.length - 1) {
+      setStep((previous) => previous + 1)
+    }
+  }
+
+  async function handleSubmit(selectedHorario?: string) {
+    const finalHorario = selectedHorario ?? form.melhorHorario
+    const canSubmit =
+      currentStep === 'melhorHorario'
+        ? Boolean(finalHorario)
+        : isCurrentStepValid()
+
+    if (!canSubmit) return
 
     try {
       setSending(true)
@@ -98,7 +110,7 @@ export default function NTTLeadFlow() {
         conhece_ntt: form.conheceNTT,
         conheceu_por_onde:
           form.conheceNTT === 'sim' ? form.conheceuPorOnde.trim() : null,
-        melhor_horario: form.melhorHorario,
+        melhor_horario: finalHorario,
       }
 
       const { error } = await insertFormSubmission(payload)
@@ -112,7 +124,7 @@ export default function NTTLeadFlow() {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : 'Nao foi possivel enviar agora. Tente novamente.'
+          : 'Nao conseguimos concluir agora. Tente novamente em instantes.'
       setSubmitError(errorMessage)
     } finally {
       setSending(false)
@@ -163,16 +175,16 @@ export default function NTTLeadFlow() {
                   transition={{ delay: 0.12, duration: 0.48 }}
                 >
                   <span className="inline-flex rounded-full border border-cyan-300/15 bg-cyan-300/10 px-3 py-1 text-xs font-medium text-cyan-200">
-                    Experiencia NTT
+                    Experiencia NTT Studio
                   </span>
 
                   <h1 className="mt-5 text-3xl font-semibold leading-tight tracking-[-0.03em]">
-                    5 aulas gratis para voce conhecer o NTT no seu ritmo
+                    Ganhe 5 aulas experimentais no NTT Studio
                   </h1>
 
                   <p className="mt-4 text-sm leading-6 text-white/68">
-                    Responda algumas perguntas rapidas para encontrarmos o melhor
-                    horario e organizar seu comeco com mais cuidado.
+                    Responda perguntas rapidas para encontrarmos o melhor horario e
+                    organizar seu inicio com acompanhamento.
                   </p>
                 </motion.div>
 
@@ -182,9 +194,9 @@ export default function NTTLeadFlow() {
                   transition={{ delay: 0.2, duration: 0.48 }}
                   className="mt-8 grid gap-3"
                 >
-                  <IntroCard>Mobile first e rapido de responder</IntroCard>
-                  <IntroCard>Uma pergunta por vez, sem atrito</IntroCard>
-                  <IntroCard>Contato direto para agendamento</IntroCard>
+                  <IntroCard>Leva menos de 1 minuto</IntroCard>
+                  <IntroCard>Uma pergunta por vez</IntroCard>
+                  <IntroCard>Agendamento direto com o time</IntroCard>
                 </motion.div>
 
                 <p className="mt-4 rounded-xl border border-amber-200/20 bg-amber-300/10 px-3 py-2 text-xs text-amber-100">
@@ -206,7 +218,7 @@ export default function NTTLeadFlow() {
                 </button>
 
                 <p className="mt-3 text-center text-xs text-white/42">
-                  Leva menos de 1 minuto
+                  Resposta rapida e sem burocracia
                 </p>
               </motion.div>
             </motion.div>
@@ -228,12 +240,12 @@ export default function NTTLeadFlow() {
               </div>
 
               <h2 className="mt-5 text-2xl font-semibold tracking-[-0.02em]">
-                Recebemos seus dados
+                Cadastro recebido com sucesso
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-white/68">
-                Nossa equipe vai entrar em contato para organizar suas 5 aulas
-                gratis no melhor horario para voce.
+                O time do NTT Studio vai entrar em contato para confirmar seu
+                melhor horario e iniciar suas 5 aulas.
               </p>
 
               <button
@@ -317,7 +329,7 @@ export default function NTTLeadFlow() {
                       {currentStep === 'whatsapp' && (
                         <QuestionLayout
                           title="Qual e o seu WhatsApp?"
-                          description="Vamos usar esse numero para falar com voce sobre o agendamento."
+                          description="Esse sera nosso canal principal para confirmar horarios."
                         >
                           <input
                             autoFocus
@@ -338,7 +350,7 @@ export default function NTTLeadFlow() {
                       {currentStep === 'email' && (
                         <QuestionLayout
                           title="Qual e o seu email?"
-                          description="Assim tambem conseguimos te enviar informacoes se precisar."
+                          description="Usamos seu email para enviar informacoes da sua jornada."
                         >
                           <input
                             autoFocus
@@ -370,7 +382,7 @@ export default function NTTLeadFlow() {
                                 active={form.jaTreina === option.value}
                                 onClick={() => {
                                   updateField('jaTreina', option.value)
-                                  setTimeout(() => nextStep(), 180)
+                                  goToNextStepDirect()
                                 }}
                               />
                             ))}
@@ -397,7 +409,7 @@ export default function NTTLeadFlow() {
                                   if (option.value === 'nao') {
                                     updateField('conheceuPorOnde', '')
                                   }
-                                  setTimeout(() => nextStep(), 180)
+                                  goToNextStepDirect()
                                 }}
                               />
                             ))}
@@ -407,8 +419,8 @@ export default function NTTLeadFlow() {
 
                       {currentStep === 'conheceuPorOnde' && (
                         <QuestionLayout
-                          title="Por onde voce conheceu o NTT?"
-                          description="Instagram, indicacao, rua, evento ou outro canal."
+                          title="Por onde voce conheceu o NTT Studio?"
+                          description="Exemplo: Instagram, indicacao, evento ou outro canal."
                         >
                           <input
                             autoFocus
@@ -425,7 +437,7 @@ export default function NTTLeadFlow() {
 
                       {currentStep === 'melhorHorario' && (
                         <QuestionLayout
-                          title="Qual e o seu melhor horario para agendar suas 5 aulas gratis?"
+                          title="Qual e o melhor horario para agendar suas 5 aulas no NTT Studio?"
                           description="Escolha a faixa que faz mais sentido para sua rotina."
                         >
                           <div className="space-y-3">
@@ -436,7 +448,7 @@ export default function NTTLeadFlow() {
                                 active={form.melhorHorario === horario}
                                 onClick={() => {
                                   updateField('melhorHorario', horario)
-                                  setTimeout(() => handleSubmit(), 220)
+                                  handleSubmit(horario)
                                 }}
                                 disabled={sending}
                               />
@@ -450,7 +462,7 @@ export default function NTTLeadFlow() {
 
                 {submitError ? (
                   <p className="mt-4 rounded-xl border border-red-300/30 bg-red-300/10 px-3 py-2 text-xs text-red-100">
-                    {submitError}
+                    Nao foi possivel concluir seu cadastro agora. {submitError}
                   </p>
                 ) : null}
 
@@ -468,7 +480,9 @@ export default function NTTLeadFlow() {
                     ) : (
                       <button
                         type="button"
-                        onClick={handleSubmit}
+                        onClick={() => {
+                          void handleSubmit()
+                        }}
                         disabled={!isCurrentStepValid() || sending}
                         className="w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-white px-4 py-3.5 text-sm font-semibold text-black transition disabled:cursor-not-allowed disabled:opacity-35"
                       >
@@ -574,8 +588,8 @@ function NTTLogo({
       style={{ width: size, height: size }}
     >
       <img
-        src="/ntt-logo-silver.svg"
-        alt="NTT"
+        src="/ntt-studio-logo.svg"
+        alt="NTT Studio"
         className="h-full w-full object-contain drop-shadow-[0_10px_30px_rgba(255,255,255,0.10)]"
       />
     </div>
